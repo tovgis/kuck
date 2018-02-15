@@ -1,0 +1,217 @@
+assmageddon - maskar i röven
+
+
+							kameror/grafik
+-----------------------------------------------------------------------------------------------------------------------------------
+640x360
+orthograpic för sprites
+perspecitve för bakgrund för att få parallax? https://www.gamasutra.com/blogs/DavidDionPaquet/20140601/218766/Creating_a_parallax_system_in_Unity3D_is_harder_than_it_seems.php ?
+högupplösta bg och förgrund med rendertexture för att fuska pixelart? 
+alla kameror mot rendertexture för att fuska till allt? eller bara för effekter particles osv?
+
+viktigt att saker passar ihop, inte ser inklistrat ut.
+
+http://neatcorporation.com/forums/viewtopic.php?t=1953 blizzard blendadd shader
+
+							gubben
+-----------------------------------------------------------------------------------------------------------------------------------							
+flera klasser eller låta en välja helt själv?
+	fighter? 
+	rogue?
+	caster? passar inte in? alien teknologi och magi kanske overkill?
+	
+lvls? sätta stats? bara få stats vid lvl? sätta stats per lvl som påverkar något helt annat?
+
+stats och items ska påverka minimalt men ändå märkas av inga 100000000 crittar
+
+hp. större pool, snabbare recovery
+power/end. större pool, snabbare recovery
+crit. critchans, critdmg
+attackspeed. +/-
+movespeed. +/-
+defense
+	dodge							
+	armor/dmgreduction
+	reistance? overkill?
+
+	
+							gear
+-----------------------------------------------------------------------------------------------------------------------------------							
+poe style, alla feta items måste ha något negativt							
+
+jewlery. bara en slot?
+	cloak?
+	ringar?
+	neck?
+								
+vapen dmgbonus eller bara någon onhit/lifesteal/etc? 
+ska vapen/sköld gå sönder så man måste byta?
+
+	ranged. 1h/2h dualwield? unlimited ammo och limited uses
+	1h. dualwield? +% dmg? +% attackspeed?
+	sköld +defense -något, attackspeed?
+	2h
+	
+armor försöka få dps lika för alla armortypes sen får proccar och liknande boosta dmg
+	helm
+	body. bara body som har armortype? eller hjälm och skor också?
+	feet
+
+	light 
+		+movespeed
+		++attackspeed
+		0armor
+		+dodge recovery?
+		snabbare end regen?
+	medium 						bara light och heavy??
+		+defense
+		+attackspeed
+	heavy
+		++defense
+		+blockrecovery? parry? vad menade jag? lite delay på actions efter man har blockat?
+		+dmg
+		-movespeed		trist? kanske räcker med att light är snabbare?
+		-attackspeed
+
+drops
+	bossvapen samma?
+	vanliga drops helt random?
+	vad får droppa? allt? bara kistor?
+	överflöd av drops eller rare?
+	
+		
+							movement
+-----------------------------------------------------------------------------------------------------------------------------------							
+upp ner höger vänster
+lås riktning när man attackerar/blockar
+sikta med mus/joy eller 8 riktningar?
+dodge and roll om inte sköld? bara light/medium armor?
+hoppa? troligen inte.
+klättra?
+hoppa in i turrets/fordon HOLY COW! timed/som powerup/specialbanor							
+nudge framåt vid melee attack
+nudge bakåt stark ranged attack
+
+inte hoppa men kunna klättra upp på saker
+
+							fiender
+-----------------------------------------------------------------------------------------------------------------------------------							
+hur scalea hp? mot playerlvl? fast kurva? antal spelare. 
+flera attacker likt spelaren. pure melee. ranged+melee combo.
+minibossar likt champions/rare i diablo?
+bossar							
+
+vilda djur som attackerar random?
+
+							story
+-----------------------------------------------------------------------------------------------------------------------------------							
+mindcontrollmaskar i röven som får gubbarnas ögon att lysa röda
+
+							banor
+-----------------------------------------------------------------------------------------------------------------------------------							
+karta likt mario3?
+helt linjärt?
+
+börja i varm trevlig miljö. förflytta sig djupare och djupare in i fiendens områden. mörkare och kallare
+----------------------
+banor helt i mörker där man bara ser bakgrunden/ljus från gubbar/skott osv
+
+							teknik
+-----------------------------------------------------------------------------------------------------------------------------------
+https://docs.unity3d.com/Manual/class-HingeJoint.html hingejoin vid ex ragdoll vid death eller länka rigidbodys. saker som gungar ex.
+
+----------------------
+sprite layer y axis
+https://breadcrumbsinteractive.com/two-unity-tricks-isometric-games/
+----------------------
+ha koll på om gubben lämnar walkable. om enter är walkable osv.
+I would use OnTriggerStay and a boolean variable that becomes true when the Player is within the object and then set that boolean to false with OnTriggerExit. Then I would apply effects to the Player in the update if that boolean is true. Something like this in C#:
+ private bool playerInBounds;
+ 
+ void OnTriggerStay(Collider Other){
+     if(other.gameObject.name == "Player"){
+         playerInBounds = true;
+     }
+ }
+ 
+ void OnTriggerExit(Collider Other){
+     if(other.gameObject.name == "Player"){
+         playerInBounds = false;
+     }
+ }
+ void Update(){
+     if(playerInBounds){
+     //effects to apply go here.
+    }
+ }
+-----------------------
+hur ska skott missa gubben? dubbla colliders på projektilen? 
+måste gå att dodgea ett skott genom att förflytta sig på y-axel
+				 ____
+				|	 |
+	---*		|	 |	
+				|    |
+	  ___		|____|
+	 |   |	   |      |  träff	 
+	  ---		------
+
+				 ____
+				|	 |
+	    		|	 |	
+				|    |
+	     		|____|
+	---*   	   |      |  miss 	om inte den nedre collidern träffar den nedre på gubben
+	     		------			samma kollider bör användas så att gubbar inte kan stå i varandra
+	  ___
+	 |   |
+	  ---
+------------- 
+https://www.gamasutra.com/blogs/DavidDionPaquet/20140601/218766/Creating_a_parallax_system_in_Unity3D_is_harder_than_it_seems.php
+
+parallax https://answers.unity.com/questions/1180071/parallax-on-x-but-how-on-the-y-as-well.html
+
+ using UnityEngine;
+ using System.Collections;
+ 
+ public class Paralaxing : MonoBehaviour {
+ 
+     public Transform[] Backgrounds;                //Array of background and forground
+     private float[] ParallaxScales;
+     public float Smoothing = 1f;                        //Minimal 1
+ 
+     private Transform cam;
+     private Vector3 PreCamPo;
+ 
+     void Awake(){
+         cam = Camera.main.transform;
+     }
+ 
+     // Use this for initialization
+     void Start () {
+         PreCamPo = cam.position;
+ 
+         ParallaxScales = new float[Backgrounds.Length];
+ 
+         for (int i = 0; i < Backgrounds.Length; i++) {
+             ParallaxScales [i] = Backgrounds [i].position.z * -1;
+         }
+     }
+     
+     // Update is called once per frame
+     void Update () {
+ 
+         for (int i = 0; i < Backgrounds.Length; i++) {
+             float parallax = (PreCamPo.x - cam.position.x) * ParallaxScales [i];
+ 
+             float BackgroundTargetPosX = Backgrounds [i].position.x + parallax;
+ 
+             Vector3 BackgroundTargetPos = new Vector3 (BackgroundTargetPosX, Backgrounds [i].position.y, Backgrounds [i].position.z);
+ 
+             Backgrounds [i].position = Vector3.Lerp (Backgrounds [i].position, BackgroundTargetPos, Smoothing * Time.deltaTime);
+ 
+ 
+         }
+ 
+         PreCamPo = cam.position;
+     }
+ }
