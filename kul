@@ -1,0 +1,249 @@
+              SELECT TMP.FONDBOLAG
+                    ,TMP.AKTIV_INDEX
+                    ,TMP.KORTNAMN_FOND
+                    ,TMP.NAMN_FOND
+                    ,TMP.ORG_SHB_NR
+                    ,TMP.ISIN_CODE
+                    ,TMP.PLAC_I_VALUTA
+                    ,TMP.ANDELS_ORG_SHB_NR
+                    ,TMP.FORV_AVG_PROC
+                    ,TMP.ADMERS_KTOR_PROC
+      * BERÄKNAD FÖRVALTNINGSAVGIFT / KONTOR
+                    ,TMP.KONTOR_ANDEL_FAVG
+      * FÖRVALTNINGSAVGIFT TOTALT
+180105              ,ROUND(TMP.TOT_FORV_AVG
+180102               - TMP.SUM_ERL_AVG_RAKU,2)
+      * FÖRVALTNINGSAVGIFT RAKU
+180105              ,ROUND(TMP.SUM_ERL_AVG_RAKU,2)
+      * FÖRVALTNINGSAVGIFT FIF
+180105              ,ROUND(TMP.FORV_AVG_FIF,2)
+      * FÖRVALTNINGSAVGIFT RÅDG
+181212***           ,ROUND(TMP.FORV_AVG_RADG,2)
+      * FÖRVALTNINGSAVGIFT DISKRETIONÄR
+181212***           ,ROUND(TMP.FORV_AVG_DISK,2)
+181212              ,ROUND(TMP.FORV_AVG_PROVFRI,2)
+      * FÖRVALTNINGSAVGIFT DEPÅFÖRSÄKRING EJ DISK
+181212***           ,ROUND(TMP.FORV_AVG_EJDISK,2)
+181212              ,ROUND(TMP.FORV_AVG_EJPROVFRI,2)
+      * FÖRVALTNINGSAVGIFT EXEC ONLY
+                    ,DEC(ROUND(TMP.TOT_FORV_AVG
+                             - TMP.SUM_ERL_AVG_RAKU
+                             - TMP.FORV_AVG_FIF
+181212***                    - TMP.FORV_AVG_RADG
+181212***                    - TMP.FORV_AVG_DISK
+181212                       - TMP.FORV_AVG_PROVFRI
+181212***                    - TMP.FORV_AVG_EJDISK
+181212                       - TMP.FORV_AVG_EJPROVFRI
+180111                      ,2),15,2)
+      * Distributörsersättning EXEC ONLY
+                    ,CASE
+                     WHEN
+                      (TMP.KONTOR_ANDEL_FAVG *
+                       DEC(ROUND((TMP.TOT_FORV_AVG
+                               - TMP.SUM_ERL_AVG_RAKU
+                               - TMP.FORV_AVG_FIF
+181212***                      - TMP.FORV_AVG_RADG
+181212***                      - TMP.FORV_AVG_DISK
+181212                         - TMP.FORV_AVG_PROVFRI
+181212***                      - TMP.FORV_AVG_EJDISK
+181212                         - TMP.FORV_AVG_EJPROVFRI
+180111                           ),2),15,2)) < 0
+                     THEN 0
+                     ELSE
+                       TMP.KONTOR_ANDEL_FAVG *
+                       DEC(ROUND((TMP.TOT_FORV_AVG
+                                - TMP.SUM_ERL_AVG_RAKU
+                                - TMP.FORV_AVG_FIF
+181212***                       - TMP.FORV_AVG_RADG
+181212***                       - TMP.FORV_AVG_DISK
+181212                          - TMP.FORV_AVG_PROVFRI
+181212***                       - TMP.FORV_AVG_EJDISK
+181212                          - TMP.FORV_AVG_EJPROVFRI
+180111                           ),2),15,2)
+                     END                   AS FORS_PROV_EXEC_ONLY
+      * Distributörsersättning RÅDGIVANDE
+181212***           ,DEC(ROUND(TMP.KONTOR_ANDEL_FAVG *
+181212***                      TMP.FORV_AVG_RADG,2),15,2)
+181212***                                  AS FORS_PROV_RADG
+      * KONTOR DEPÅFÖRSÄKRING (LIV)
+                    ,DEC(ROUND(TMP.KONTOR_ANDEL_FAVG *
+181212***                      TMP.FORV_AVG_EJDISK,2),15,2)
+181212                         TMP.FORV_AVG_EJPROVFRI,2),15,2)
+181212***                                  AS FORV_AVG_EJDISK
+181212                                     AS KONTOR_DEPA
+      * ÅTERLÄGGNING KUND
+                    ,TMP.SUMMA_KUND_Q25ATK
+      * FÖRVALTNINGSAVGIFT DEPÅFÖRSÄKRING
+                    ,TMP.FORV_AVG_DEPA
+      * VARAV FÖRVALTNINGSAVGIFT DEPÅFÖRSÄKRING DISKRETIONÄR
+181212***           ,TMP.FORV_AVG_DEPA_EJDISK
+181212              ,TMP.FORV_AVG_DEPA_DISK
+      * ÅTERLÄGGNING DEPÅFÖRSÄKRING
+                    ,TMP.SUMMA_DEPA_Q25ATD
+              FROM
+             (SELECT A05.NAMN_FÖRV_FONDBOLAG AS FONDBOLAG
+                    ,A05.FOND_AKTIV_INDEX    AS AKTIV_INDEX
+                    ,A05.KORTNAMN_FOND       AS KORTNAMN_FOND
+                    ,A07.NAMN_FOND           AS NAMN_FOND
+                    ,A05.ORG_SHB_NR          AS ORG_SHB_NR
+                    ,A05.ISIN_CODE           AS ISIN_CODE
+                    ,A05.PLAC_I_VALUTA       AS PLAC_I_VALUTA
+                    ,A05.ANDELS_ORG_SHB_NR   AS ANDELS_ORG_SHB_NR
+                    ,A05.FÖRV_AVG_PROC       AS FORV_AVG_PROC
+      * FÖRVALTNINGSAVGIFT % KONTOR (ADM ERSÄTTNING)
+200121*             ,(CASE
+200121*               WHEN A05.PLAC_I_VALUTA <> 'SEK'
+200121*               THEN 0
+200121*               ELSE A05.ADMERS_KTOR_PROC
+200121*               END)                   AS ADMERS_KTOR_PROC
+200121              ,A05.ADMERS_KTOR_PROC    AS ADMERS_KTOR_PROC
+      * ARBETSFÄLT
+200121*             ,(CASE
+200121*               WHEN A05.FÖRV_AVG_PROC = 0
+200121*               THEN 0
+200121*               WHEN A05.PLAC_I_VALUTA <> 'SEK'
+200121*               THEN 0
+200121*               ELSE
+200121*                 DEC(ROUND((A05.ADMERS_KTOR_PROC /
+200121*                            A05.FÖRV_AVG_PROC),9),12,9)
+200121*               END)                 AS KONTOR_ANDEL_FAVG
+200121               ,DEC(ROUND((A05.ADMERS_KTOR_PROC /
+200121                           A05.FÖRV_AVG_PROC),9),12,9)
+200121                                     AS KONTOR_ANDEL_FAVG
+      * FÖRVALTNINGSAVGIFT TOTALT
+                    ,SUM(DEC(ROUND((ROUND(A50.TOT_ANTAL_ANDELAR,4) *
+180111                                    A50.FÖRV_KOSTN_AND),2),15,2))
+                                           AS TOT_FORV_AVG
+      * FÖRVALTNINGSAVGIFT RAKU
+                    ,DEC(COALESCE(RAKU.ERL_AVG,0),15,2)
+                                           AS SUM_ERL_AVG_RAKU
+      * FÖRVALTNINGSAVGIFT FIF
+                    ,SUM(DEC(ROUND((ROUND(A50.ANTAL_ANDELAR_FIF,4) *
+180111                                    A50.FÖRV_KOSTN_AND),2),15,2))
+                                           AS FORV_AVG_FIF
+      * FÖRVALTNINGSAVGIFT RÅDGIVANDE
+181212***           ,SUM(DEC(ROUND((ROUND(A50.ANTAL_AND_RÅDGIVNING,4) *
+181212***                                 A50.FÖRV_KOSTN_AND),2),15,2))
+181212***                                  AS FORV_AVG_RADG
+      * FÖRVALTNINGSAVGIFT KAPITALSPAR DEPÅ DISKRETIONÄR
+                    ,SUM(DEC(ROUND((ROUND(
+181212***                           A50.ANTAL_AND_DISKRETIONÄR,4) *
+181212                              A50.ANTAL_AND_PROVFRI,4) *
+180111                                    A50.FÖRV_KOSTN_AND),2),15,2))
+181212***                                  AS FORV_AVG_DISK
+181212                                     AS FORV_AVG_PROVFRI
+      * FÖRVALTNINGSAVGIFT DEPÅFÖRSÄKRING, EJ DISKR
+                    ,SUM(DEC(ROUND((ROUND(A50.ANTAL_ANDELAR_FÖRS -
+181212***                           A50.ANT_AND_DISKR_FÖRSÄKRING,4) *
+181212                              A50.ANT_AND_PROVFRI_FÖRS,4) *
+180111                                    A50.FÖRV_KOSTN_AND),2),15,2))
+181212***                                  AS FORV_AVG_EJDISK
+181212                                     AS FORV_AVG_EJPROVFRI
+      * FÖRVALTNINGSAVGIFT DEPÅFÖRSÄKRING
+                    ,SUM(DEC(ROUND((ROUND(A50.ANTAL_ANDELAR_FÖRS,4) *
+180111                                    A50.FÖRV_KOSTN_AND),2),15,2))
+                                           AS FORV_AVG_DEPA
+      * FÖRVALTNINGSAVGIFT DEPÅFÖRSÄKRING, DISKRETIONÄR
+                    ,SUM(DEC(ROUND((ROUND(
+181212***                           A50.ANT_AND_DISKR_FÖRSÄKRING,4) *
+181212                              A50.ANT_AND_PROVFRI_FÖRS,4) *
+180111                              A50.FÖRV_KOSTN_AND),2),15,2))
+181212***                                   AS FORV_AVG_DEPA_EJDISK
+181212                                      AS FORV_AVG_DEPA_DISK
+      * ÅTERLÄGGNING KUND
+180111              ,DEC(COALESCE(Q25ATK.SUMMA_KUND,0),15,2)
+                                           AS SUMMA_KUND_Q25ATK
+      * ÅTERLÄGGNING DEPÅ
+180111              ,DEC(COALESCE(Q25ATD.SUMMA_DEPA,0),15,2)
+                                           AS SUMMA_DEPA_Q25ATD
+              FROM Q25A05AA A05
+              JOIN Q25A07AA A07
+              ON A05.ORG_SHB_NR   = A07.AVSER_FOND
+              AND A07.AVSER_SPRÅK = 'SE'
+              JOIN Q25A50AA A50
+              ON A05.ORG_SHB_NR   = A50.ORG_SHB_NR
+
+      * RAKU ERL_AVG
+              LEFT OUTER JOIN TABLE
+                  (SELECT A21.ORG_SHB_NR
+                         ,SUM(A22.ERLAGD_AVG)     AS ERL_AVG
+                   FROM Q25A05AA A05A
+                   JOIN Q25A21AA A21
+                   ON A05A.ORG_SHB_NR        = A21.ORG_SHB_NR
+                   JOIN Q25A22AA A22
+                   ON A21.FONDKONTONR        = A22.BERÖRT_FONDKONTO
+                   WHERE A05A.SHB_FOND_J_N   = 'J'
+181126****         AND   A05A.FOND_AKTIV_J_N = 'J'
+180102****         AND   A22.UTBET_J_N       = 'J'
+                   AND   A22.TRANSAKTIONSDATUM BETWEEN :AA-PERIOD-START
+                                                   AND :AA-PERIOD-SLUT
+                   GROUP BY A21.ORG_SHB_NR
+                  ) AS RAKU
+              ON A05.ORG_SHB_NR = RAKU.ORG_SHB_NR
+
+      * Q25A42 - ÅTERLÄGGNING KUND
+              LEFT OUTER JOIN TABLE
+                  (SELECT A11.AVSER_FOND
+                         ,SUM(A42.SUMMA_ÅTERLÄGGNING) AS SUMMA_KUND
+                   FROM Q25A05AA A05A
+                   JOIN Q25A11AA A11
+                   ON A05A.ORG_SHB_NR        = A11.AVSER_FOND
+                   JOIN Q25A42AA A42
+                   ON A42.FONDKONTONR        = A11.AVSER_FONDKONTO
+                   WHERE A05A.SHB_FOND_J_N   = 'J'
+181126****         AND   A05A.FOND_AKTIV_J_N = 'J'
+                   AND   A11.QURA_KTO_J_N    = 'N'
+                   AND   A42.DATUM_FROM      = :AA-PERIOD-START-X
+                   AND   A42.DATUM_TOM       = :AA-PERIOD-SLUT-X
+                   GROUP BY A11.AVSER_FOND
+                  ) AS Q25ATK
+              ON A05.ORG_SHB_NR = Q25ATK.AVSER_FOND
+
+      * Q25A42 - ÅTERLÄGGNING DEPÅFÖRSÄKRING
+              LEFT OUTER JOIN TABLE
+                  (SELECT A11.AVSER_FOND
+                         ,SUM(A42.SUMMA_ÅTERLÄGGNING) AS SUMMA_DEPA
+                   FROM Q25A05AA A05A
+                   JOIN Q25A11AA A11
+                   ON A05A.ORG_SHB_NR        = A11.AVSER_FOND
+                   JOIN Q25A10AA A10
+                   ON  A11.TECKNAS_AV_PERSORG = A10.PERS_ORG_SHB_NR
+                   AND A11.SEKELSIFFROR       = A10.SEKELSIFFROR
+                   JOIN Q25A42AA A42
+                   ON A42.FONDKONTONR        = A11.AVSER_FONDKONTO
+                   WHERE A05A.SHB_FOND_J_N   = 'J'
+181126****         AND   A05A.FOND_AKTIV_J_N = 'J'
+                   AND   A11.QURA_KTO_J_N    = 'N'
+                   AND   A10.FÖRSÄK_KUND_J_N = 'J'
+                   AND   A42.DATUM_FROM      = :AA-PERIOD-START-X
+                   AND   A42.DATUM_TOM       = :AA-PERIOD-SLUT-X
+                   GROUP BY A11.AVSER_FOND
+                  ) AS Q25ATD
+              ON A05.ORG_SHB_NR = Q25ATD.AVSER_FOND
+
+      * SHB-FOND
+              WHERE A05.SHB_FOND_J_N   = 'J'
+      * AKTIV
+181126****    AND   A05.FOND_AKTIV_J_N = 'J'
+      * PERIOD-START FRÅN Q25X02 (KONSTANTTEXT = '39')
+      * PERIOD-SLUT  FRÅN HAFOP171
+              AND   A50.DAT_FOND
+                    BETWEEN :AA-PERIOD-START AND
+                            :AA-PERIOD-SLUT
+              AND   A05.KORTNAMN_FOND > :AA-KORTNAMN-LISTA
+
+              GROUP BY A05.NAMN_FÖRV_FONDBOLAG
+                      ,A05.FOND_AKTIV_INDEX
+                      ,A05.ANDELS_ORG_SHB_NR
+                      ,A07.NAMN_FOND
+                      ,A05.ORG_SHB_NR
+                      ,A05.KORTNAMN_FOND
+                      ,A05.ISIN_CODE
+                      ,A05.PLAC_I_VALUTA
+                      ,A05.FÖRV_AVG_PROC
+                      ,A05.ADMERS_KTOR_PROC
+                      ,COALESCE(RAKU.ERL_AVG,0)
+                      ,COALESCE(Q25ATK.SUMMA_KUND,0)
+                      ,COALESCE(Q25ATD.SUMMA_DEPA,0)
+
+              ORDER BY A05.KORTNAMN_FOND
